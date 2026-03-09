@@ -1,94 +1,91 @@
 const canvas = document.getElementById("game")
 const ctx = canvas.getContext("2d")
 
-let macacoImg = new Image()
-macacoImg.src = "img/macaco.png"
-
-let bananaImg = new Image()
-bananaImg.src = "img/banana.png"
-
-let macaco = {
-    x:80,
-    y:200,
+let player = {
+    x:370,
+    y:340,
     width:60,
-    height:60,
-    dy:0,
-    gravity:0.7,
-    jump:-14,
-    grounded:true
+    height:30,
+    speed:8
 }
 
-let bananas = []
-let pontos = 0
-let gameOver = false
+let moedas = []
+let score = 0
 
-function desenharMacaco(){
-    ctx.drawImage(macacoImg, macaco.x, macaco.y, macaco.width, macaco.height)
+let left = false
+let right = false
+
+function criarMoeda(){
+
+    moedas.push({
+        x: Math.random()*760,
+        y:0,
+        size:20,
+        speed:4
+    })
+
 }
 
-function atualizarMacaco(){
+function desenharPlayer(){
 
-    macaco.y += macaco.dy
+    ctx.fillStyle = "blue"
+    ctx.fillRect(player.x,player.y,player.width,player.height)
 
-    if(!macaco.grounded){
-        macaco.dy += macaco.gravity
+}
+
+function desenharMoedas(){
+
+    ctx.fillStyle="gold"
+
+    moedas.forEach(m=>{
+        ctx.beginPath()
+        ctx.arc(m.x,m.y,m.size,0,Math.PI*2)
+        ctx.fill()
+    })
+
+}
+
+function atualizar(){
+
+    if(left){
+        player.x -= player.speed
     }
 
-    if(macaco.y >= 200){
-        macaco.y = 200
-        macaco.dy = 0
-        macaco.grounded = true
+    if(right){
+        player.x += player.speed
     }
-}
 
-function criarBanana(){
+    moedas.forEach((m,index)=>{
 
-    bananas.push({
-        x:canvas.width,
-        y:210,
-        width:40,
-        height:40
-    })
-}
+        m.y += m.speed
 
-function desenharBananas(){
-
-    bananas.forEach(b=>{
-        ctx.drawImage(bananaImg, b.x, b.y, b.width, b.height)
-    })
-}
-
-function atualizarBananas(){
-
-    bananas.forEach((b,index)=>{
-
-        b.x -= 6
-
-        if(colisao(macaco,b)){
-            gameOver = true
+        if(colisao(player,m)){
+            moedas.splice(index,1)
+            score++
         }
 
-        if(b.x < -50){
-            bananas.splice(index,1)
-            pontos++
+        if(m.y > canvas.height){
+            moedas.splice(index,1)
         }
 
     })
+
 }
 
-function colisao(a,b){
+function colisao(p,m){
 
-    return a.x < b.x + b.width &&
-           a.x + a.width > b.x &&
-           a.y < b.y + b.height &&
-           a.y + a.height > b.y
+    return m.x > p.x &&
+           m.x < p.x + p.width &&
+           m.y > p.y &&
+           m.y < p.y + p.height
+
 }
 
-function desenharPontuacao(){
+function desenharScore(){
 
     ctx.fillStyle="black"
     ctx.font="20px Arial"
-    ctx.fillText("Pontuação: "+pontos,20,30)
+    ctx.fillText("Pontuação: "+score,10,30)
 
 }
 
@@ -96,34 +93,32 @@ function loop(){
 
     ctx.clearRect(0,0,canvas.width,canvas.height)
 
-    atualizarMacaco()
-    atualizarBananas()
+    atualizar()
 
-    desenharMacaco()
-    desenharBananas()
-    desenharPontuacao()
-
-    if(gameOver){
-
-        ctx.fillStyle="red"
-        ctx.font="50px Arial"
-        ctx.fillText("GAME OVER",300,150)
-        return
-    }
+    desenharPlayer()
+    desenharMoedas()
+    desenharScore()
 
     requestAnimationFrame(loop)
+
 }
 
 document.addEventListener("keydown",e=>{
 
-    if(e.code==="Space" && macaco.grounded){
-        macaco.dy = macaco.jump
-        macaco.grounded=false
-    }
+    if(e.key==="ArrowLeft") left=true
+    if(e.key==="ArrowRight") right=true
 
 })
 
-setInterval(criarBanana,1800)
+document.addEventListener("keyup",e=>{
 
+    if(e.key==="ArrowLeft") left=false
+    if(e.key==="ArrowRight") right=false
+
+})
+
+setInterval(criarMoeda,1000)
+
+loop()
 loop()
 scoreLoop();
