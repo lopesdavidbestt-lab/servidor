@@ -1,58 +1,79 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
+
+let macacoImg = new Image()
+macacoImg.src = "img/macaco.png"
+
+let bananaImg = new Image()
+bananaImg.src = "img/banana.png"
 
 let macaco = {
-    x: 50,
-    y: 200,
-    width: 40,
-    height: 40,
-    dy: 0,
-    jump: -12,
-    gravity: 0.6,
-    grounded: true
-};
-
-let obstaculos = [];
-let gameOver = false;
-
-function desenharMacaco(){
-    ctx.fillStyle = "brown";
-    ctx.fillRect(macaco.x, macaco.y, macaco.width, macaco.height);
+    x:80,
+    y:200,
+    width:60,
+    height:60,
+    dy:0,
+    gravity:0.7,
+    jump:-14,
+    grounded:true
 }
 
-function desenharObstaculos(){
-    ctx.fillStyle = "green";
+let bananas = []
+let pontos = 0
+let gameOver = false
 
-    obstaculos.forEach(o => {
-        ctx.fillRect(o.x, o.y, o.width, o.height);
-    });
+function desenharMacaco(){
+    ctx.drawImage(macacoImg, macaco.x, macaco.y, macaco.width, macaco.height)
 }
 
 function atualizarMacaco(){
 
-    macaco.y += macaco.dy;
+    macaco.y += macaco.dy
 
     if(!macaco.grounded){
-        macaco.dy += macaco.gravity;
+        macaco.dy += macaco.gravity
     }
 
-    if(macaco.y > 200){
-        macaco.y = 200;
-        macaco.dy = 0;
-        macaco.grounded = true;
+    if(macaco.y >= 200){
+        macaco.y = 200
+        macaco.dy = 0
+        macaco.grounded = true
     }
 }
 
-function atualizarObstaculos(){
+function criarBanana(){
 
-    obstaculos.forEach(o => {
-        o.x -= 6;
+    bananas.push({
+        x:canvas.width,
+        y:210,
+        width:40,
+        height:40
+    })
+}
 
-        if(colisao(macaco,o)){
-            gameOver = true;
+function desenharBananas(){
+
+    bananas.forEach(b=>{
+        ctx.drawImage(bananaImg, b.x, b.y, b.width, b.height)
+    })
+}
+
+function atualizarBananas(){
+
+    bananas.forEach((b,index)=>{
+
+        b.x -= 6
+
+        if(colisao(macaco,b)){
+            gameOver = true
         }
-    });
 
+        if(b.x < -50){
+            bananas.splice(index,1)
+            pontos++
+        }
+
+    })
 }
 
 function colisao(a,b){
@@ -60,50 +81,49 @@ function colisao(a,b){
     return a.x < b.x + b.width &&
            a.x + a.width > b.x &&
            a.y < b.y + b.height &&
-           a.y + a.height > b.y;
+           a.y + a.height > b.y
 }
 
-function spawnObstaculo(){
+function desenharPontuacao(){
 
-    obstaculos.push({
-        x:800,
-        y:220,
-        width:30,
-        height:30
-    });
+    ctx.fillStyle="black"
+    ctx.font="20px Arial"
+    ctx.fillText("Pontuação: "+pontos,20,30)
 
 }
 
 function loop(){
 
+    ctx.clearRect(0,0,canvas.width,canvas.height)
+
+    atualizarMacaco()
+    atualizarBananas()
+
+    desenharMacaco()
+    desenharBananas()
+    desenharPontuacao()
+
     if(gameOver){
-        ctx.fillStyle="red";
-        ctx.font="40px Arial";
-        ctx.fillText("GAME OVER",300,150);
-        return;
+
+        ctx.fillStyle="red"
+        ctx.font="50px Arial"
+        ctx.fillText("GAME OVER",300,150)
+        return
     }
 
-    ctx.clearRect(0,0,800,300);
-
-    atualizarMacaco();
-    atualizarObstaculos();
-
-    desenharMacaco();
-    desenharObstaculos();
-
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop)
 }
 
-setInterval(spawnObstaculo,2000);
-
-document.addEventListener("keydown",function(e){
+document.addEventListener("keydown",e=>{
 
     if(e.code==="Space" && macaco.grounded){
-        macaco.dy = macaco.jump;
-        macaco.grounded = false;
+        macaco.dy = macaco.jump
+        macaco.grounded=false
     }
 
-});
+})
 
-loop();
+setInterval(criarBanana,1800)
+
+loop()
 scoreLoop();
