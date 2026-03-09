@@ -1,95 +1,109 @@
-const macaco = document.getElementById('macaco');
-const game = document.getElementById('game');
-const scoreEl = document.getElementById('score');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-let isPulando = false;
-let score = 0;
-let playing = true;
-let speed = 7;
+let macaco = {
+    x: 50,
+    y: 200,
+    width: 40,
+    height: 40,
+    dy: 0,
+    jump: -12,
+    gravity: 0.6,
+    grounded: true
+};
 
-// Jump
-function pular() {
-  if (isPulando || !playing) return;
-  isPulando = true;
-  let jumpHeight = parseInt(macaco.style.bottom) || 23;
-  const maxJump = 100;
-  const gravity = 5;
+let obstaculos = [];
+let gameOver = false;
 
-  const upInterval = setInterval(() => {
-    if (!playing) { clearInterval(upInterval); return; }
-    if (jumpHeight >= maxJump) {
-      clearInterval(upInterval);
-      const downInterval = setInterval(() => {
-        if (!playing) { clearInterval(downInterval); return; }
-        if (jumpHeight <= 23) {
-          jumpHeight = 23;
-          macaco.style.bottom = jumpHeight + 'px';
-          clearInterval(downInterval);
-          isPulando = false;
-        } else {
-          jumpHeight -= gravity;
-          macaco.style.bottom = jumpHeight + 'px';
+function desenharMacaco(){
+    ctx.fillStyle = "brown";
+    ctx.fillRect(macaco.x, macaco.y, macaco.width, macaco.height);
+}
+
+function desenharObstaculos(){
+    ctx.fillStyle = "green";
+
+    obstaculos.forEach(o => {
+        ctx.fillRect(o.x, o.y, o.width, o.height);
+    });
+}
+
+function atualizarMacaco(){
+
+    macaco.y += macaco.dy;
+
+    if(!macaco.grounded){
+        macaco.dy += macaco.gravity;
+    }
+
+    if(macaco.y > 200){
+        macaco.y = 200;
+        macaco.dy = 0;
+        macaco.grounded = true;
+    }
+}
+
+function atualizarObstaculos(){
+
+    obstaculos.forEach(o => {
+        o.x -= 6;
+
+        if(colisao(macaco,o)){
+            gameOver = true;
         }
-      }, 16);
-    } else {
-      jumpHeight += gravity;
-      macaco.style.bottom = jumpHeight + 'px';
-    }
-    macaco.style.bottom = jumpHeight + 'px';
-  }, 16);
+    });
+
 }
 
-// Obstacles
-function criarObstaculo() {
-  if (!playing) return;
-  const obstaculo = document.createElement('div');
-  obstaculo.classList.add('obstaculo');
-  game.appendChild(obstaculo);
-  let obstaculoLeft = 800;
+function colisao(a,b){
 
-  obstaculo.style.left = obstaculoLeft + 'px';
-
-  const moveInterval = setInterval(() => {
-    if (!playing) {
-      if (obstaculo.parentNode) game.removeChild(obstaculo);
-      clearInterval(moveInterval);
-      return;
-    }
-    if (obstaculoLeft < -20) {
-      clearInterval(moveInterval);
-      if (obstaculo.parentNode) game.removeChild(obstaculo);
-    }
-    obstaculoLeft -= speed;
-    obstaculo.style.left = obstaculoLeft + 'px';
-
-    // Collision
-    const macacoBottom = parseInt(macaco.style.bottom) || 23;
-    if (
-      obstaculoLeft > 70 && obstaculoLeft < 114 && macacoBottom < 50
-    ) {
-      playing = false;
-      scoreEl.textContent = "GAME OVER";
-      setTimeout(() => { window.location.reload() }, 1600);
-    }
-  }, 16);
-
-  setTimeout(criarObstaculo, Math.random() * 800 + 700);
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
 }
 
-// Score loop estilo dino
-function scoreLoop() {
-  if (!playing) return;
-  score += 1;
-  scoreEl.textContent = String(score).padStart(5, '0');
-  setTimeout(scoreLoop, 60);
+function spawnObstaculo(){
+
+    obstaculos.push({
+        x:800,
+        y:220,
+        width:30,
+        height:30
+    });
+
 }
 
-document.addEventListener('keydown', e => {
-  if ((e.code === 'Space' || e.key === ' ') && playing) pular();
-  if ((e.code === 'ArrowUp' || e.key === 'ArrowUp') && playing) pular();
+function loop(){
+
+    if(gameOver){
+        ctx.fillStyle="red";
+        ctx.font="40px Arial";
+        ctx.fillText("GAME OVER",300,150);
+        return;
+    }
+
+    ctx.clearRect(0,0,800,300);
+
+    atualizarMacaco();
+    atualizarObstaculos();
+
+    desenharMacaco();
+    desenharObstaculos();
+
+    requestAnimationFrame(loop);
+}
+
+setInterval(spawnObstaculo,2000);
+
+document.addEventListener("keydown",function(e){
+
+    if(e.code==="Space" && macaco.grounded){
+        macaco.dy = macaco.jump;
+        macaco.grounded = false;
+    }
+
 });
 
-macaco.style.bottom = '23px';
-
-criarObstaculo();
+loop();
 scoreLoop();
